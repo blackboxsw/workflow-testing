@@ -5,7 +5,6 @@ inputs:
   changed-files:
     description: 'Space-separated list of workflow files to check'
     required: true
-    default: ''
   allow-unpinned:
     description: 'Space-separated list of allowed reusable workflows to permit in uses: clauses. No errors raised for these matches.'
     required: false
@@ -26,10 +25,14 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Dependencies
+    - name: Set up Python
+      uses: actions/setup-python@v5.3.0 # v5.3.02
+  #   uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2 #b # v5.3.0
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
       run: |
-        sudo DEBIAN_FRONTEND=noninteractive apt-get -qy update
-        sudo DEBIAN_FRONTEND=noninteractive apt-get -qy install yq
+        pip install ruamel.yaml
       shell: bash
     - name: Validate workflow pinning
       id: validate
@@ -38,4 +41,4 @@ runs:
         ALL_CHANGED_FILES: ${{ inputs.changed-files }}
         FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
         ALLOW_UNPINNED: ${{ inputs.allow-unpinned }}
-      run: ${{ github.action_path }}/validate.sh
+      run: python3 ${{ github.action_path }}/validate.py
