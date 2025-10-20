@@ -1,0 +1,41 @@
+name: 'Validate Workflow Pinning'
+description: 'Validates that GitHub Actions in workflows are pinned to commit SHAs'
+
+inputs:
+  changed-files:
+    description: 'Space-separated list of workflow files to check'
+    required: true
+    default: ''
+  allow-unpinned:
+    description: 'Space-separated list of allowed reusable workflows to permit in uses: clauses. No errors raised for these matches.'
+    required: false
+    default: ''
+  fail-on-error:
+    description: 'Whether to fail the action if unpinned actions are found'
+    required: false
+    default: 'true'
+
+outputs:
+  result:
+    description: 'Result of the validation (success or failure)'
+    value: ${{ steps.validate.outputs.result }}
+  errors-found:
+    description: 'Whether any errors were found'
+    value: ${{ steps.validate.outputs.errors-found }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Dependencies
+      run: |
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -qy update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -qy install yq
+      shell: bash
+    - name: Validate workflow pinning
+      id: validate
+      shell: bash
+      env:
+        ALL_CHANGED_FILES: ${{ inputs.changed-files }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+        ALLOW_UNPINNED: ${{ inputs.allow-unpinned }}
+      run: ${{ github.action_path }}/validate.sh

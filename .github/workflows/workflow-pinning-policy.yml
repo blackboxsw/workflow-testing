@@ -1,0 +1,37 @@
+name: Enforce SHA for github workflow actions pinned to SHA
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**.yml'
+      - '.github/workflows/**.yaml'
+
+jobs:
+  check-uses-sha:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # v4
+
+      - name: Get all matching changed files
+        id: changed-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62  # v45.0.4
+        with:
+          files: |
+            .github/workflows/**.yml
+            .github/workflows/**.yaml
+          files_separator: " "
+
+      - name: Check CHANGED FILES
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "TEST $file"
+          done
+      - name: Validate workflow pinning
+        uses: ./.github/actions/validate-workflow-pinning
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_and_modified_files }}
+        with:
+          changed-files: ${{ vars.ALL_CHANGED_FILES }}
+          allow-unpinned: ''
+          fail-on-error: 'true'
