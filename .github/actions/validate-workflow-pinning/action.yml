@@ -26,8 +26,7 @@ runs:
   using: 'composite'
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v5.3.0 # v5.3.02
-  #   uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2 #b # v5.3.0
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
       with:
         python-version: '3.x'
     - name: Install dependencies
