@@ -91,6 +91,7 @@ def validate_workflow_files(
             for path in Path(".github/workflows").rglob("*.yml")
             + Path(".github/actions").rglob("*.yml")
         ]
+        print(f"FILES TO LOOK AT {changed_files}")
 
     for file_path in changed_files:
         if ".github/workflows" not in file_path and ".github/actions" not in file_path:
