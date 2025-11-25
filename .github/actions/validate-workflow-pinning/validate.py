@@ -8,6 +8,7 @@ branches.
 """
 
 import os
+from pathlib import Path
 import re
 import sys
 from typing import List, Tuple
@@ -36,35 +37,33 @@ def get_uses_statements(file_path: str) -> List[Tuple[str, int]]:
     """
     uses_statements = []
 
+    yaml = YAML()
     try:
-        yaml = YAML()
-
         with open(file_path, "r") as f:
             content = yaml.load(f)
-
-        # Return if content does contain neither jobs nor runs keys.
-        if not content or {"jobs", "runs"}.intersection(content.keys()) == set():
-            return uses_statements
-
-        # Obtain closest leaf YAML key data which may contain a list of steps.
-        # Local action.yaml has a runs with optional nested steps whereas
-        # workflows contain a jobs key with nested job_ids with optional nested steps.
-        step_operations = (
-            [content["runs"]] if "runs" in content else content["jobs"].values()
-        )
-        for step_data in step_operations:
-            for step in step_data.get("steps", []):
-                uses_value = step.get("uses")
-                if step.get("uses"):
-                    # Get 0-based line number from ruamel.yaml's line col info.
-                    line_num = 0
-                    if "uses" in step.lc.data:
-                        # Convert line value to 1-based.
-                        line_num = step.lc.data["uses"][0] + 1
-                    uses_statements.append((uses_value, line_num))
-
     except Exception as e:
         print(f"Warning: Error processing {file_path}: {e}", file=sys.stderr)
+
+    # When YAML contains neither jobs nor runs it is an unsupported workflow.
+    if not content or {"jobs", "runs"}.intersection(content.keys()) == set():
+        return []
+
+    # Obtain closest leaf YAML key data which may contain a list of steps.
+    # Local action.yaml has 'runs' with optional nested steps whereas
+    # workflows contain 'jobs' with nested job_ids with optional nested steps.
+    step_operations = (
+        [content["runs"]] if "runs" in content else content["jobs"].values()
+    )
+    for step_data in step_operations:
+        for step in step_data.get("steps", []):
+            uses_value = step.get("uses")
+            if step.get("uses"):
+                # Get 0-based line number from ruamel.yaml's line col info.
+                line_num = 0  # 0 indicates an unknown line number
+                if "uses" in step.lc.data:
+                    # Convert index number to line number
+                    line_num = step.lc.data["uses"][0] + 1
+                uses_statements.append((uses_value, line_num))
 
     return uses_statements
 
@@ -86,9 +85,15 @@ def validate_workflow_files(
     print("Checking for 'uses:' statements without SHA pins...")
 
     fail = False
+    if not changed_files:
+        changed_files = [
+            str(path)
+            for path in Path(".github/workflows").rglob("*.yml")
+            + Path(".github/actions").rglob("*.yml")
+        ]
 
     for file_path in changed_files:
-        if ".github/workflows/" not in file_path and ".github/actions" not in file_path:
+        if ".github/workflows" not in file_path and ".github/actions" not in file_path:
             continue
 
         # Skip if file doesn't exist (e.g., deleted files).
@@ -117,7 +122,7 @@ def validate_workflow_files(
     if fail:
         print("❌ Some workflows are using tags or branches instead of commit SHAs.")
         print(
-            "Best practice: pin SHAs with comment for tag/branch <some_action>@<commit_SHA> # vX.Y.Z"
+            "Best practice: pin SHAs with comment for tag/branch <some_action>@<commit_SHA> # v<major>.<minor>.<patch>"
         )
 
         if fail_on_error:
