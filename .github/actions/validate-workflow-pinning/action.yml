@@ -1,4 +1,4 @@
-name: 'Validate Workflow Pinning'
+name: 'Validate Workflow Pinning for realzies'
 description: 'Validates that GitHub Actions in workflows are pinned to commit SHAs'
 
 inputs:
