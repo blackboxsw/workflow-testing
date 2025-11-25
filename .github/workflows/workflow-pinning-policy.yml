@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/**.yml'
       - '.github/workflows/**.yaml'
+      - '.github/actions/**.yml'
+      - '.github/actions/**.yaml'
 
 jobs:
   check-uses-sha:
@@ -13,16 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.3.0
 
-      - name: Get all matching changed files
-        id: matching-changed-files
-        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62  # v45.0.4
-        with:
-          files: ".github/workflows/*.yml .github/workflows/*.yaml"
-          files_separator: " "
-
       - name: Validate workflow pinning
         uses: ./.github/actions/validate-workflow-pinning
         with:
-          changed-files: ${{ steps.matching-changed-files.outputs.all_changed_and_modified_files }}
           allow-unpinned: ''
-          fail-on-error: 'true'
